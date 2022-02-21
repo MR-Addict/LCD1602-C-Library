@@ -1,6 +1,4 @@
-# LCD1602-library-in-keil
-
-This is a LCD1602 C library.
+# LCD1602 C library
 
 - C51 library is based on `8-bit` interface using `RS`, `RW` and `EN` Pins
 
