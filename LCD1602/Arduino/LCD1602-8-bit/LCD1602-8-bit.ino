@@ -12,7 +12,46 @@ uint8_t LCD_DISPLAY_CONTROL = 0x0C;
 const uint8_t EN = 10, RW = 11, RS = 12;
 const uint8_t data_pins[] = {9, 8, 7, 6, 5, 4, 3, 2};
 
-/******************底层基础函数************************/
+const char* message = "Hello world!";
+uint8_t bell[] = {0x4, 0xe, 0xe, 0xe, 0x1f, 0x0, 0x4};
+
+void send_pins(uint8_t);
+uint8_t read_pins();
+void wait_ready();
+void write_cmd();
+void write_data();
+void lcd_init();
+void lcd_clear();
+void lcd_home();
+void display_off();
+void display_on();
+void cursor_off();
+void cursor_on();
+void blink_off();
+void blink_on();
+void scroll_left();
+void scroll_right();
+void set_cursor();
+void print(const char);
+void print(const char*);
+void creat_char(uint8_t, uint8_t*);
+
+void setup() {
+    lcd_init();
+    creat_char(0, bell);
+    set_cursor(0, 0);
+    print(message);
+    print('*');
+    set_cursor(7, 1);
+    print("Have a nice day! By Mr.Addict!");
+    set_cursor(37, 1);
+    write_data(0);
+}
+
+void loop() {
+    scroll_left();
+    delay(1000);
+}
 
 // 发送数据到引脚
 void send_pins(uint8_t dat) {
@@ -36,7 +75,7 @@ void wait_ready() {
     // 读取LCD状态RS=0，RW=1
     digitalWrite(RS, LOW);
     digitalWrite(RW, HIGH);
-    // 将引脚设置未输入模式
+    // 将引脚设置为输入模式
     for (uint8_t i = 0; i < 8; i++) {
         pinMode(data_pins[i], INPUT);
     }
@@ -45,7 +84,7 @@ void wait_ready() {
         digitalWrite(EN, HIGH);
         sta = read_pins();
         digitalWrite(EN, LOW);
-    } while (sta & 0x80);  // 读取Bit7的Busy_Flag
+    } while (sta & 0x80);  // 读取Bit7的Busy Flag
     // 将引脚重新设置为输出
     for (uint8_t i = 0; i < 8; i++) {
         pinMode(data_pins[i], OUTPUT);
@@ -71,20 +110,30 @@ void write_data(uint8_t dat) {
     digitalWrite(RS, HIGH);
     digitalWrite(RW, LOW);
     send_pins(dat);
-    // 发送数据需要高脉冲
+    // 发送数据需要EN高脉冲
     digitalWrite(EN, HIGH);
     digitalWrite(EN, LOW);
 }
 
-/*****************客户端可调用函数***********************/
+// LCD初始化
+void lcd_init() {
+    pinMode(EN, OUTPUT);
+    pinMode(RS, OUTPUT);
+    pinMode(RW, OUTPUT);
+
+    write_cmd(LCD_FUNCTION_SET);     // 8总线，2行显示区域，5x8字体
+    write_cmd(LCD_DISPLAY_CONTROL);  // 显示开，光标关，闪烁关
+    write_cmd(LCD_CLEAR);            // 清屏
+    write_cmd(LCD_ENTRY_MODE);       // 地址自动+1，文字不动
+}
 
 // 清空屏幕
-void clear() {
+void lcd_clear() {
     write_cmd(LCD_CLEAR);
 }
 
 // 光标以及光标指针回到初始状态
-void home() {
+void lcd_home() {
     write_cmd(LCD_HOME);
 }
 
@@ -163,38 +212,4 @@ void creat_char(uint8_t num, uint8_t* bit_map) {
     for (uint8_t i = 0; i < 8; i++) {
         write_data(bit_map[i]);
     }
-}
-
-// LCD初始化
-void lcd_init() {
-    pinMode(EN, OUTPUT);
-    pinMode(RS, OUTPUT);
-    pinMode(RW, OUTPUT);
-
-    write_cmd(LCD_FUNCTION_SET);     // 8总线，2行显示区域，5x8字体
-    write_cmd(LCD_DISPLAY_CONTROL);  // 显示开，光标关，闪烁关
-    write_cmd(LCD_CLEAR);            // 清屏
-    write_cmd(LCD_ENTRY_MODE);       // 地址自动+1，文字不动
-}
-
-/******************Example***********************/
-
-const char* message = "Hello world!";
-uint8_t duck[] = {0x4, 0xe, 0xe, 0xe, 0x1f, 0x0, 0x4};
-
-void setup() {
-    lcd_init();
-    creat_char(0, duck);
-    set_cursor(0, 0);
-    print(message);
-    print('*');
-    set_cursor(7, 1);
-    print("Have a nice day! By Mr.Addict!");
-    set_cursor(37, 1);
-    write_data(0);
-}
-
-void loop() {
-    scroll_left();
-    delay(1000);
 }
